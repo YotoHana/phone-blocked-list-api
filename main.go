@@ -7,12 +7,12 @@ import (
 )
 
 func main() {
-  http.HandleFunc("/", Handler)
+  http.HandleFunc("/", HandlerGet)
+  http.HandleFunc("/add", HandlePost)
   http.ListenAndServe(":8080", nil)
-
 }
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func HandlerGet(w http.ResponseWriter, r *http.Request) {
   phoneNumberGet := r.Header.Get("phoneNumber")
   phoneNumber := formatPhoneNumber(phoneNumberGet)
   blockList := isBlocked(phoneNumber)
@@ -49,4 +49,15 @@ func formatPhoneNumber(phoneNumber string) string {
   phoneNumber = strings.ReplaceAll(phoneNumber, "+", "")
   phoneNumber = "+7" + phoneNumber[len(phoneNumber)-10:]
   return phoneNumber
+}
+
+func HandlePost(w http.ResponseWriter, r *http.Request)  {
+	// phoneNumberGet := r.Header.Get("phoneNumber")
+	tokenGet := r.Header.Get("token")
+	if tokenGet == "9rbAv2uYtWQebBX0rrp4KY3lVcTK6t"{
+		fmt.Fprintf(w, "TOKEN IS GOOD")
+	} else {
+		fmt.Fprintf(w, "TOKEN FAILED")
+	}
+
 }
