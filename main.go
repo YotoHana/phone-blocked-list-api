@@ -1,20 +1,25 @@
 package main
 
 import (
-  "fmt"
-  "net/http"
-  "strings"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
 )
 
 func main() {
   http.HandleFunc("/", HandlerGet)
   http.HandleFunc("/add", HandlePost)
+  log.Println("Server is running at localhost:8080")
   http.ListenAndServe(":8080", nil)
 }
 
 func HandlerGet(w http.ResponseWriter, r *http.Request) {
+  log.Println("GET phoneNumber request")
   phoneNumberGet := r.Header.Get("phoneNumber")
+  log.Println("phoneNumber formatting...")
   phoneNumber := formatPhoneNumber(phoneNumberGet)
+  log.Println("phoneNumber formatted")
   blockList := isBlocked(phoneNumber)
   result := blockedString(blockList)
 
@@ -52,12 +57,20 @@ func formatPhoneNumber(phoneNumber string) string {
 }
 
 func HandlePost(w http.ResponseWriter, r *http.Request)  {
-	// phoneNumberGet := r.Header.Get("phoneNumber")
+  log.Println("Getting token from request")
 	tokenGet := r.Header.Get("token")
-	if tokenGet == "9rbAv2uYtWQebBX0rrp4KY3lVcTK6t"{
-		fmt.Fprintf(w, "TOKEN IS GOOD")
-	} else {
-		fmt.Fprintf(w, "TOKEN FAILED")
-	}
+	if tokenGet != "9rbAv2uYtWQebBX0rrp4KY3lVcTK6t"{
+    log.Println("Invalid token from request")
+    fmt.Fprintf(w, "Invalid token, access is denied")
+  } else {
+    log.Println("Adding new number")
+    phoneNumberGet := r.Header.Get("phoneNumber")
+    phoneNumber := formatPhoneNumber(phoneNumberGet)
+    // code for save number in local file
+    log.Println("Saving number")
+    fmt.Fprintf(w, "Number %s is saved!", phoneNumber)
+    log.Println("Number is saved")
+  }
+
 
 }
