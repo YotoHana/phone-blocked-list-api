@@ -5,6 +5,9 @@ import (
 	"log"
 	"net/http"
 	"strings"
+  "os"
+  "bufio"
+  "io"
 )
 
 func main() {
@@ -17,9 +20,9 @@ func main() {
 func HandlerGet(w http.ResponseWriter, r *http.Request) {
   log.Println("GET phoneNumber request")
   phoneNumberGet := r.Header.Get("phoneNumber")
-  log.Println("phoneNumber formatting...")
+  log.Printf("%s formatting...", phoneNumberGet)
   phoneNumber := formatPhoneNumber(phoneNumberGet)
-  log.Println("phoneNumber formatted")
+  log.Printf("%s formatted", phoneNumber)
   blockList := isBlocked(phoneNumber)
   result := blockedString(blockList)
 
@@ -28,7 +31,7 @@ func HandlerGet(w http.ResponseWriter, r *http.Request) {
 
 func isBlocked(number string) bool {
   blocked := false
-  numberArr := [5]string{"+79374848615", "+79572135764", "+77564723458", "+76583746574", "+79462347561"}
+  numberArr := showNumbers()
   for _, s := range numberArr {
     if number == s {
       blocked := true
@@ -56,6 +59,34 @@ func formatPhoneNumber(phoneNumber string) string {
   return phoneNumber
 }
 
+func showNumbers() []string {
+  file, err := os.Open("numbers.txt") 
+    if err != nil { 
+         fmt.Println("Unable to open file:", err) 
+         return nil
+    } 
+    defer file.Close() 
+  
+    reader := bufio.NewReader(file)
+	var result = make([]string, 0)
+    for {
+        line, err := reader.ReadString(' ') 
+        if err != nil { 
+            if err == io.EOF { 
+                break
+            } else { 
+                fmt.Println(err) 
+                return nil
+            } 
+        }
+    formLine := formatPhoneNumber(line)
+		result = append(result, formLine)
+    log.Printf("Showing numbers from file: %s", formLine)
+    }
+    log.Println(result)
+    return result
+}
+
 func HandlePost(w http.ResponseWriter, r *http.Request)  {
   log.Println("Getting token from request")
 	tokenGet := r.Header.Get("token")
@@ -63,14 +94,33 @@ func HandlePost(w http.ResponseWriter, r *http.Request)  {
     log.Println("Invalid token from request")
     fmt.Fprintf(w, "Invalid token, access is denied")
   } else {
-    log.Println("Adding new number")
-    phoneNumberGet := r.Header.Get("phoneNumber")
-    phoneNumber := formatPhoneNumber(phoneNumberGet)
-    // code for save number in local file
-    log.Println("Saving number")
-    fmt.Fprintf(w, "Number %s is saved!", phoneNumber)
-    log.Println("Number is saved")
+    numberGet := r.Header.Get("phoneNumber")
+    var number = make([]string, 0)
+    formattedNumber := formatPhoneNumber(numberGet)
+    number = append(number, formattedNumber)
+    writeNumber, err := writeFile(number)
+    if err != nil {
+      fmt.Fprintf(w, "Something wrong, operation failed!")
+    }
+    fmt.Fprintf(w, "Operation completed! %s", writeNumber)
   }
 
 
+}
+
+func writeFile(data []string) (string, error){
+	file, err := os.OpenFile("numbers.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil{
+		return "error crating file", err
+	}
+
+	dataWriter := bufio.NewWriter(file)
+
+	for _, value := range data {
+		_, _ = dataWriter.WriteString(value + " ")
+	}
+
+	dataWriter.Flush()
+	file.Close()
+	return "all good", nil
 }
